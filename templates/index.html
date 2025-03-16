@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LawLens Search</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #000;
+            color: #fff;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+            scroll-behavior: smooth;
+        }
+
+        /* Sidebar Menu */
+        .menu-button {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            font-size: 30px;
+            cursor: pointer;
+            color: #fff;
+            z-index: 1001;
+        }
+
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: -250px;
+            width: 250px;
+            height: 100%;
+            background-color: #111;
+            padding-top: 60px;
+            transition: 0.3s;
+            box-shadow: 2px 0 10px rgba(255, 255, 255, 0.2);
+        }
+
+        .sidebar a {
+            display: block;
+            padding: 15px;
+            color: #fff;
+            text-decoration: none;
+            font-size: 22px;
+            transition: 0.3s;
+        }
+
+        .sidebar a:hover {
+            background-color: #444;
+        }
+
+        .open-sidebar {
+            left: 0;
+        }
+
+        /* Centered Neon Heading */
+        .lawlens-heading {
+            position: fixed;
+            top: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 55px;
+            font-weight: bold;
+            color: #fff;
+            text-shadow: 0 0 20px #fff, 0 0 40px #ccc;
+            animation: neonGlow 2s infinite alternate;
+        }
+
+        @keyframes neonGlow {
+            0% { text-shadow: 0 0 20px #fff, 0 0 40px #bbb; }
+            50% { text-shadow: 0 0 25px #fff, 0 0 50px #ddd; }
+            100% { text-shadow: 0 0 20px #fff, 0 0 40px #bbb; }
+        }
+
+        /* Sections */
+        .section {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        /* Search Section */
+        #home { background-color: #000; }
+        #account { background-color: #111; }
+        #payment { background-color: #222; }
+        #logout { background-color: #333; }
+
+        /* Search Box */
+        .search-container {
+            display: flex;
+            gap: 10px;
+            margin-top: 50px;
+        }
+
+        .search-box {
+            padding: 14px;
+            width: 450px;
+            border: 2px solid #fff;
+            border-radius: 25px;
+            outline: none;
+            background-color: #111;
+            color: #fff;
+            font-size: 20px;
+        }
+
+        .search-button {
+            padding: 14px 24px;
+            border: none;
+            border-radius: 25px;
+            background-color: #fff;
+            color: #000;
+            font-size: 20px;
+            cursor: pointer;
+            transition: 0.3s;
+            font-weight: bold;
+        }
+
+        .search-button:hover {
+            background-color: #ddd;
+        }
+
+        /* Search Results */
+        .results {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            width: 80%;
+            max-width: 800px;
+            align-items: center;
+        }
+
+        .result-box {
+            background-color: #111;
+            padding: 25px;
+            border-radius: 25px;
+            width: 100%;
+            box-shadow: 0 6px 12px rgba(255, 255, 255, 0.2);
+            cursor: pointer;
+            max-height: 140px;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+            transition: max-height 0.5s ease, white-space 0.5s ease, padding 0.3s ease;
+            font-size: 18px;
+            border: 1px solid #fff;
+        }
+
+        .result-box strong {
+            font-size: 22px;
+            color: #fff;
+        }
+
+        .result-box.expanded {
+            max-height: 1000px;
+            white-space: normal;
+            padding: 30px;
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- Sidebar Menu -->
+    <div class="menu-button" onclick="toggleSidebar()">☰</div>
+    <div id="sidebar" class="sidebar">
+        <a href="#home">Search for relevant cases</a>
+        <a href="#account">Account</a>
+        <a href="#payment">Payment</a>
+        <a href="#logout">Logout</a>
+    </div>
+
+    <!-- Centered Heading -->
+    <div class="lawlens-heading">LAWLENS AI</div>
+
+    <!-- Search Section -->
+    <div id="home" class="section">
+        <h2>Search for relevant cases</h2>
+        <div class="search-container">
+            <input type="text" id="searchInput" class="search-box" placeholder="Enter your search query...">
+            <button onclick="performSearch()" class="search-button">Search</button>
+        </div>
+        <div id="results" class="results"></div>
+        <button id="loadMore" class="search-button" style="display: none; margin-top: 20px;" onclick="loadMoreResults()">More</button>
+    </div>
+
+    <div id="account" class="section">
+        <h2>Account</h2>
+        <p>Manage your account details here.</p>
+    </div>
+
+    <div id="payment" class="section">
+        <h2>Payment</h2>
+        <p>Manage your subscriptions and payments.</p>
+    </div>
+
+    <div id="logout" class="section">
+        <h2>Logout</h2>
+        <p>Click below to log out.</p>
+        <button onclick="alert('Logged Out!')" class="search-button">Logout</button>
+    </div>
+
+    <script>
+        let allResults = [];
+        let visibleCount = 3;
+
+        function toggleSidebar() {
+            document.getElementById("sidebar").classList.toggle("open-sidebar");
+        }
+
+        async function performSearch() {
+            const query = document.getElementById("searchInput").value.trim();
+            const resultsContainer = document.getElementById("results");
+            const loadMoreButton = document.getElementById("loadMore");
+            resultsContainer.innerHTML = "";
+            loadMoreButton.style.display = "none";
+            visibleCount = 3;
+
+            if (!query) {
+                alert("Please enter a search term.");
+                return;
+            }
+
+            // Send search request to Flask backend
+            const response = await fetch("/search", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ query })
+            });
+
+            const data = await response.json();
+
+            if (data.error) {
+                resultsContainer.innerHTML = `<div class="result-box">${data.error}</div>`;
+                return;
+            }
+
+            if (!data.matches || data.matches.length === 0) {
+                resultsContainer.innerHTML = `<div class="result-box">No relevant results found.</div>`;
+                return;
+            }
+
+            allResults = data.matches;
+            displayResults();
+
+            if (allResults.length > 3) {
+                loadMoreButton.style.display = "block";
+            }
+        }
+
+        function displayResults() {
+            const resultsContainer = document.getElementById("results");
+            resultsContainer.innerHTML = "";
+
+            allResults.slice(0, visibleCount).forEach(result => {
+                const resultBox = document.createElement("div");
+                resultBox.classList.add("result-box");
+                resultBox.innerHTML = `<strong>(${result.filename})</strong><br>${result.content}`;
+                resultBox.addEventListener("click", () => resultBox.classList.toggle("expanded"));
+                resultsContainer.appendChild(resultBox);
+            });
+        }
+
+        function loadMoreResults() {
+            visibleCount += 3;
+            displayResults();
+            if (visibleCount >= allResults.length) {
+                document.getElementById("loadMore").style.display = "none";
+            }
+        }
+    </script>
+
+</body>
+</html>
